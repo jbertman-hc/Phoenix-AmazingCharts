@@ -1,0 +1,86 @@
+@page "/settings"
+@using AmazingCharts.Services
+@using AmazingCharts.Components.Settings
+@using AmazingCharts.Components.Shared
+@inject ThemeService ThemeService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Settings</MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-3" Elevation="2">
+                <MudNavMenu>
+                    <MudNavLink Href="#general" Icon="@Icons.Material.Filled.Settings" OnClick="@(() => activeSection = "general")">
+                        General
+                    </MudNavLink>
+                    <MudNavLink Href="#appearance" Icon="@Icons.Material.Filled.Palette" OnClick="@(() => activeSection = "appearance")">
+                        Appearance
+                    </MudNavLink>
+                    <MudNavLink Href="#theme" Icon="@Icons.Material.Filled.ColorLens" OnClick="@(() => activeSection = "theme")">
+                        Theme
+                    </MudNavLink>
+                    <MudNavLink Href="#notifications" Icon="@Icons.Material.Filled.Notifications" OnClick="@(() => activeSection = "notifications")">
+                        Notifications
+                    </MudNavLink>
+                    <MudNavLink Href="#security" Icon="@Icons.Material.Filled.Security" OnClick="@(() => activeSection = "security")">
+                        Security
+                    </MudNavLink>
+                    <MudNavLink Href="#advanced" Icon="@Icons.Material.Filled.Code" OnClick="@(() => activeSection = "advanced")">
+                        Advanced
+                    </MudNavLink>
+                </MudNavMenu>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" md="9">
+            <MudPaper Class="pa-4" Elevation="2">
+                @if (activeSection == "general")
+                {
+                    <GeneralSettings />
+                }
+                else if (activeSection == "appearance")
+                {
+                    <AppearanceSettings />
+                }
+                else if (activeSection == "theme")
+                {
+                    <ThemeSettingsContent />
+                }
+                else if (activeSection == "notifications")
+                {
+                    <NotificationsSettings />
+                }
+                else if (activeSection == "security")
+                {
+                    <SecuritySettings />
+                }
+                else if (activeSection == "advanced")
+                {
+                    <AdvancedSettings />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string activeSection = "general";
+    
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (uri.Fragment.StartsWith("#"))
+        {
+            var fragment = uri.Fragment.Substring(1);
+            if (!string.IsNullOrEmpty(fragment))
+            {
+                activeSection = fragment;
+            }
+        }
+    }
+}

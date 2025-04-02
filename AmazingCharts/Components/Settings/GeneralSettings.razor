@@ -1,0 +1,71 @@
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4">General Settings</MudText>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">User Interface</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_showWelcomeScreen" Color="Color.Primary" Label="Show welcome screen on startup" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_enableAnimations" Color="Color.Primary" Label="Enable UI animations" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_showTips" Color="Color.Primary" Label="Show helpful tips" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Default Views</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Default Dashboard View" Value="@_defaultDashboardView">
+                    <MudSelectItem Value="@("summary")">Summary</MudSelectItem>
+                    <MudSelectItem Value="@("appointments")">Appointments</MudSelectItem>
+                    <MudSelectItem Value="@("messages")">Messages</MudSelectItem>
+                    <MudSelectItem Value="@("tasks")">Tasks</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Default Schedule View" Value="@_defaultScheduleView">
+                    <MudSelectItem Value="@("day")">Day</MudSelectItem>
+                    <MudSelectItem Value="@("week")">Week</MudSelectItem>
+                    <MudSelectItem Value="@("month")">Month</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0">
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings" Class="ml-auto">Save Changes</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    private bool _showWelcomeScreen = true;
+    private bool _enableAnimations = true;
+    private bool _showTips = true;
+    private string _defaultDashboardView = "summary";
+    private string _defaultScheduleView = "week";
+    
+    private void SaveSettings()
+    {
+        // In a real implementation, save settings to a service or API
+        Snackbar.Add("General settings saved successfully", Severity.Success);
+    }
+}

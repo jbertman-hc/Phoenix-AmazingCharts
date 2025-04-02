@@ -5,6 +5,7 @@ using AmazingCharts.ApiClient;
 using MudBlazor.Services;
 using AmazingCharts.Services;
 using System.Net.Http.Headers;
+using Microsoft.JSInterop;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -60,6 +61,7 @@ builder.Services.AddScoped<LabService>();
 builder.Services.AddScoped<MessageService>();
 builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<AiAssistantService>();
+builder.Services.AddSingleton<ThemeService>(sp => new ThemeService(sp.GetRequiredService<IJSRuntime>()));
 
 // Add logging
 builder.Logging.SetMinimumLevel(LogLevel.Information);

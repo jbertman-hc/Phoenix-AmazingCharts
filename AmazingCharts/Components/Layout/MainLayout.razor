@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
+@inject AmazingCharts.Services.ThemeService ThemeService
 
 <MudLayout>
     <MudAppBar Elevation="1" Fixed="true">
@@ -7,13 +8,27 @@
         <MudText Typo="Typo.h5" Class="ml-3">Amazing Charts EHR</MudText>
         <MudSpacer />
         <DataSourceIndicator />
+        <MudTooltip Text="@(ThemeService.IsDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")">
+            <MudIconButton Icon="@(ThemeService.IsDarkMode ? @Icons.Material.Filled.LightMode : @Icons.Material.Filled.DarkMode)" 
+                           Color="Color.Inherit" Edge="Edge.End" OnClick="@((e) => ThemeService.ToggleDarkMode())" />
+        </MudTooltip>
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" Edge="Edge.End" />
+        <MudIconButton Icon="@Icons.Material.Filled.Psychology" Color="Color.Secondary" Edge="Edge.End" OnClick="@((e) => ToggleAiDrawer())" />
         <MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Inherit" Edge="Edge.End" />
+        <MudMenu Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" Edge="Edge.End" AnchorOrigin="Origin.BottomRight">
+            <MudMenuItem Href="/settings">Settings</MudMenuItem>
+            <MudMenuItem>User Profile</MudMenuItem>
+            <MudMenuItem>Preferences</MudMenuItem>
+            <MudDivider />
+            <MudMenuItem>Logout</MudMenuItem>
+        </MudMenu>
     </MudAppBar>
     
-    <MudDrawer @bind-Open="@_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Variant="@DrawerVariant.Mini" Breakpoint="Breakpoint.Sm" PreserveOpenState="true">
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Variant="@DrawerVariant.Responsive" Breakpoint="Breakpoint.Sm" PreserveOpenState="true">
         <NavMenu />
     </MudDrawer>
+    
+    <AiAssistantDrawer @bind-IsOpen="_aiDrawerOpen" />
     
     <MudMainContent Class="pt-16 px-2">
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
@@ -24,9 +39,21 @@
 
 @code {
     private bool _drawerOpen = true;
+    private bool _aiDrawerOpen = false;
 
     private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+    
+    private void ToggleAiDrawer()
+    {
+        _aiDrawerOpen = !_aiDrawerOpen;
+    }
+    
+    protected override void OnInitialized()
+    {
+        ThemeService.ThemeChanged += (sender, args) => StateHasChanged();
+        base.OnInitialized();
     }
 }

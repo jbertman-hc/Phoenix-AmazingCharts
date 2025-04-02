@@ -1,0 +1,71 @@
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4">Notifications Settings</MudText>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Email Notifications</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_emailNewMessages" Color="Color.Primary" Label="New messages" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_emailAppointmentReminders" Color="Color.Primary" Label="Appointment reminders" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_emailLabResults" Color="Color.Primary" Label="New lab results" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">In-App Notifications</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_appNewMessages" Color="Color.Primary" Label="New messages" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_appAppointmentReminders" Color="Color.Primary" Label="Appointment reminders" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_appLabResults" Color="Color.Primary" Label="New lab results" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_appSystemUpdates" Color="Color.Primary" Label="System updates" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0">
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings" Class="ml-auto">Save Changes</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    private bool _emailNewMessages = true;
+    private bool _emailAppointmentReminders = true;
+    private bool _emailLabResults = true;
+    
+    private bool _appNewMessages = true;
+    private bool _appAppointmentReminders = true;
+    private bool _appLabResults = true;
+    private bool _appSystemUpdates = false;
+    
+    private void SaveSettings()
+    {
+        // In a real implementation, save settings to a service or API
+        Snackbar.Add("Notification settings saved successfully", Severity.Success);
+    }
+}

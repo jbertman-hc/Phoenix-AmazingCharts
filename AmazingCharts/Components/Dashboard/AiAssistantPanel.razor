@@ -1,8 +1,10 @@
 @using AmazingCharts.Services
 @inject AiAssistantService AiAssistantService
 
-<div class="d-flex flex-column" style="height: 100%;">
-    <div class="flex-grow-1 overflow-auto mb-4" style="height: calc(100% - 120px);">
+<div class="d-flex flex-column">
+    <MudText Typo="Typo.h5" Class="mb-4">AI Assistant</MudText>
+    
+    <div class="flex-grow-1 overflow-auto mb-4">
         <MudPaper Elevation="0" Class="pa-3 mb-2 rounded-lg" Style="background-color: #f5f5f5;">
             <MudText Typo="Typo.body1">Hello, Dr. Bertman. How can I assist you today?</MudText>
             <MudText Typo="Typo.caption" Class="mt-1">AI Assistant - @DateTime.Now.ToString("h:mm tt")</MudText>
@@ -105,9 +107,9 @@
         await SendMessage();
     }
 
-    private async Task OnKeyDown(KeyboardEventArgs args)
+    private async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(userInput))
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(userInput))
         {
             await SendMessage();
         }

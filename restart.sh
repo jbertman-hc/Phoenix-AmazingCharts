@@ -41,10 +41,11 @@ if ! lsof -i:3000 -t > /dev/null 2>&1; then
     exit 1
 fi
 
-# Start the Blazor application
-echo "🚀 Starting Blazor application..."
+# Start the Blazor application with watch mode
+echo "🚀 Starting Blazor application with watch mode..."
 cd AmazingCharts
-dotnet run --urls=http://localhost:5002 > ../blazor.log 2>&1 &
+echo "🔄 Watch mode is active - application will restart on file changes"
+DOTNET_WATCH_RESTART_ON_RUDE_EDIT=1 dotnet watch run --no-hot-reload --urls=http://localhost:5002 > ../blazor.log 2>&1 &
 BLAZOR_PID=$!
 cd ..
 

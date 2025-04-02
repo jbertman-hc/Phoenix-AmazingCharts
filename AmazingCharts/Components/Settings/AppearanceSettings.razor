@@ -1,0 +1,130 @@
+@using AmazingCharts.Services
+@inject ThemeService ThemeService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<MudText Typo="Typo.h5" Class="mb-4">Appearance Settings</MudText>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Theme Mode</MudText>
+                <MudPaper Elevation="0" Class="pa-4 rounded-lg" Style="background-color: var(--mud-palette-background-grey)">
+                    <MudRadioGroup @bind-SelectedOption="@_isDarkMode" T="bool">
+                        <MudRadio Option="@false" Color="Color.Primary">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.LightMode" Class="mr-2" />
+                                Light Mode
+                            </div>
+                        </MudRadio>
+                        <MudRadio Option="@true" Color="Color.Primary">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.DarkMode" Class="mr-2" />
+                                Dark Mode
+                            </div>
+                        </MudRadio>
+                    </MudRadioGroup>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Preview</MudText>
+                <MudPaper Elevation="0" Class="pa-4 rounded-lg d-flex flex-wrap gap-2" Style="background-color: var(--mud-palette-background-grey)">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary">Primary</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary">Secondary</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Tertiary">Tertiary</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Info">Info</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Color Palette</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="6" sm="4" md="3">
+                <ColorSwatch Name="Primary" Color="@GetPaletteColor("Primary")" />
+            </MudItem>
+            <MudItem xs="6" sm="4" md="3">
+                <ColorSwatch Name="Secondary" Color="@GetPaletteColor("Secondary")" />
+            </MudItem>
+            <MudItem xs="6" sm="4" md="3">
+                <ColorSwatch Name="Tertiary" Color="@GetPaletteColor("Tertiary")" />
+            </MudItem>
+            <MudItem xs="6" sm="4" md="3">
+                <ColorSwatch Name="Info" Color="@GetPaletteColor("Info")" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Font Settings</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Font Family" Value="@_fontFamily" ValueChanged="@(value => _fontFamily = value)">
+                    <MudSelectItem Value="@("Roboto")">Roboto</MudSelectItem>
+                    <MudSelectItem Value="@("Arial")">Arial</MudSelectItem>
+                    <MudSelectItem Value="@("Helvetica")">Helvetica</MudSelectItem>
+                    <MudSelectItem Value="@("Verdana")">Verdana</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Font Size" Value="@_fontSize" ValueChanged="@(value => _fontSize = value)">
+                    <MudSelectItem Value="@("Small")">Small</MudSelectItem>
+                    <MudSelectItem Value="@("Medium")">Medium</MudSelectItem>
+                    <MudSelectItem Value="@("Large")">Large</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0">
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings" Class="ml-auto">Save Changes</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    private bool _isDarkMode;
+    private string _fontFamily = "Roboto";
+    private string _fontSize = "Medium";
+    
+    protected override void OnInitialized()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        ThemeService.ThemeChanged += (sender, args) => StateHasChanged();
+    }
+    
+    protected override void OnParametersSet()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+    }
+    
+    private string GetPaletteColor(string propertyName)
+    {
+        var palette = ThemeService.CurrentTheme.Palette;
+        var property = palette.GetType().GetProperty(propertyName);
+        return property?.GetValue(palette)?.ToString() ?? "#000000";
+    }
+    
+    private async Task SaveSettings()
+    {
+        ThemeService.SetTheme(_isDarkMode);
+        await ThemeService.SaveThemePreference();
+        Snackbar.Add("Appearance settings saved successfully", Severity.Success);
+    }
+}

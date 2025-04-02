@@ -1,0 +1,38 @@
+@namespace AmazingCharts.Components.Shared
+
+<div class="color-swatch">
+    <div class="color-preview" style="background-color: @Color"></div>
+    <div class="color-info">
+        <MudText Typo="Typo.subtitle2">@Name</MudText>
+        <MudText Typo="Typo.caption">@Color</MudText>
+    </div>
+</div>
+
+<style>
+    .color-swatch {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .color-preview {
+        height: 80px;
+        width: 100%;
+    }
+    
+    .color-info {
+        padding: 8px;
+        background-color: var(--mud-palette-surface);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Name { get; set; } = "";
+    
+    [Parameter]
+    public string Color { get; set; } = "#000000";
+}

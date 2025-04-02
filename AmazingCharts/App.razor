@@ -1,4 +1,8 @@
-<MudThemeProvider />
+@inject AmazingCharts.Services.ThemeService ThemeService
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<MudThemeProvider Theme="@ThemeService.CurrentTheme" @bind-IsDarkMode="@ThemeService.IsDarkMode" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
@@ -21,3 +25,18 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await ThemeService.LoadSavedTheme();
+        ThemeService.ThemeChanged += (sender, args) => StateHasChanged();
+        await base.OnInitializedAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ThemeService.ThemeChanged -= (sender, args) => StateHasChanged();
+        await ThemeService.SaveThemePreference();
+    }
+}

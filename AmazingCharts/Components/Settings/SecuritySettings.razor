@@ -1,0 +1,136 @@
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4">Security Settings</MudText>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Password</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="@_currentPassword" Label="Current Password" InputType="InputType.Password" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="@_newPassword" Label="New Password" InputType="InputType.Password" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="@_confirmPassword" Label="Confirm New Password" InputType="InputType.Password" />
+            </MudItem>
+            <MudItem xs="12" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ChangePassword">Change Password</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Two-Factor Authentication</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_enable2FA" Color="Color.Primary" Label="Enable Two-Factor Authentication" />
+            </MudItem>
+            @if (_enable2FA)
+            {
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 rounded-lg" Style="background-color: var(--mud-palette-background-grey)">
+                        <MudText>Scan the QR code with your authenticator app:</MudText>
+                        <div class="d-flex justify-center my-4">
+                            <MudImage Src="https://via.placeholder.com/200x200.png?text=QR+Code" Alt="QR Code" Width="200" Height="200" />
+                        </div>
+                        <MudTextField @bind-Value="@_verificationCode" Label="Verification Code" />
+                        <div class="d-flex justify-end mt-2">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Verify2FA">Verify</MudButton>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Session Settings</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="int" @bind-Value="_sessionTimeout" Label="Session Timeout (minutes)">
+                    <MudSelectItem Value="15">15 minutes</MudSelectItem>
+                    <MudSelectItem Value="30">30 minutes</MudSelectItem>
+                    <MudSelectItem Value="60">1 hour</MudSelectItem>
+                    <MudSelectItem Value="120">2 hours</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_rememberMe" Color="Color.Primary" Label="Remember me on this device" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0">
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings" Class="ml-auto">Save Changes</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    private string _currentPassword = "";
+    private string _newPassword = "";
+    private string _confirmPassword = "";
+    private bool _enable2FA = false;
+    private string _verificationCode = "";
+    private int _sessionTimeout = 30;
+    private bool _rememberMe = true;
+    
+    private void ChangePassword()
+    {
+        if (string.IsNullOrEmpty(_currentPassword) || string.IsNullOrEmpty(_newPassword) || string.IsNullOrEmpty(_confirmPassword))
+        {
+            Snackbar.Add("All password fields are required", Severity.Warning);
+            return;
+        }
+        
+        if (_newPassword != _confirmPassword)
+        {
+            Snackbar.Add("New passwords do not match", Severity.Error);
+            return;
+        }
+        
+        // In a real implementation, validate current password and update to new password
+        Snackbar.Add("Password changed successfully", Severity.Success);
+        _currentPassword = "";
+        _newPassword = "";
+        _confirmPassword = "";
+    }
+    
+    private void Verify2FA()
+    {
+        if (string.IsNullOrEmpty(_verificationCode))
+        {
+            Snackbar.Add("Verification code is required", Severity.Warning);
+            return;
+        }
+        
+        // In a real implementation, validate the verification code
+        Snackbar.Add("Two-factor authentication enabled successfully", Severity.Success);
+        _verificationCode = "";
+    }
+    
+    private void SaveSettings()
+    {
+        // In a real implementation, save settings to a service or API
+        Snackbar.Add("Security settings saved successfully", Severity.Success);
+    }
+}

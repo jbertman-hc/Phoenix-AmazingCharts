@@ -1,0 +1,120 @@
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4">Advanced Settings</MudText>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Data Source</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudRadioGroup @bind-SelectedOption="@_dataSource" T="string">
+                    <MudRadio Option="@("live")" Color="Color.Primary">Live API</MudRadio>
+                    <MudRadio Option="@("mock")" Color="Color.Primary">Mock Data</MudRadio>
+                </MudRadioGroup>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="@_apiEndpoint" Label="API Endpoint" Disabled="@(_dataSource != "live")" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Performance</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_enableCaching" Color="Color.Primary" Label="Enable Caching" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="int" @bind-Value="_cacheExpirationMinutes" Label="Cache Expiration (minutes)" Disabled="@(!_enableCaching)">
+                    <MudSelectItem Value="5">5 minutes</MudSelectItem>
+                    <MudSelectItem Value="15">15 minutes</MudSelectItem>
+                    <MudSelectItem Value="30">30 minutes</MudSelectItem>
+                    <MudSelectItem Value="60">1 hour</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_enableCompression" Color="Color.Primary" Label="Enable Compression" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0" Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Logging</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="string" @bind-Value="_logLevel" Label="Log Level">
+                    <MudSelectItem Value="@("error")">Error</MudSelectItem>
+                    <MudSelectItem Value="@("warning")">Warning</MudSelectItem>
+                    <MudSelectItem Value="@("info")">Info</MudSelectItem>
+                    <MudSelectItem Value="@("debug")">Debug</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch @bind-Checked="@_enableConsoleLogging" Color="Color.Primary" Label="Enable Console Logging" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearLogs" Class="mt-2">Clear Logs</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="0">
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings" Class="ml-auto">Save Changes</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="ResetToDefaults">Reset to Defaults</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    private string _dataSource = "live";
+    private string _apiEndpoint = "https://api.amazingcharts.com/v1";
+    
+    private bool _enableCaching = true;
+    private int _cacheExpirationMinutes = 15;
+    private bool _enableCompression = true;
+    
+    private string _logLevel = "info";
+    private bool _enableConsoleLogging = true;
+    
+    private void ClearLogs()
+    {
+        // In a real implementation, clear logs
+        Snackbar.Add("Logs cleared successfully", Severity.Success);
+    }
+    
+    private void SaveSettings()
+    {
+        // In a real implementation, save settings to a service or API
+        Snackbar.Add("Advanced settings saved successfully", Severity.Success);
+    }
+    
+    private void ResetToDefaults()
+    {
+        _dataSource = "live";
+        _apiEndpoint = "https://api.amazingcharts.com/v1";
+        _enableCaching = true;
+        _cacheExpirationMinutes = 15;
+        _enableCompression = true;
+        _logLevel = "info";
+        _enableConsoleLogging = true;
+        
+        Snackbar.Add("Settings reset to defaults", Severity.Info);
+    }
+}

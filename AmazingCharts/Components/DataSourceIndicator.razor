@@ -1,5 +1,6 @@
 @using AmazingCharts.ApiClient
 @inject ApiProxyService ApiProxy
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @implements IDisposable
 
 @if (ApiProxy != null)
@@ -8,7 +9,16 @@
         <MudIcon Icon="@(_isUsingMockData ? @Icons.Material.Filled.CloudOff : @Icons.Material.Filled.Cloud)" 
                 Color="@(_isUsingMockData ? Color.Error : Color.Success)" 
                 Size="Size.Small" />
-        <span class="ml-2">@(_isUsingMockData ? "Using Mock Data" : "Using Live API")</span>
+        @if (_isUsingMockData)
+        {
+            <span class="ml-2">Using Mock Data</span>
+        }
+        else
+        {
+            <MudTooltip Text="@($"API Endpoint: {_apiEndpoint}")">
+                <span class="ml-2">Using Live API</span>
+            </MudTooltip>
+        }
     </div>
 }
 
@@ -33,9 +43,13 @@
 
 @code {
     private bool _isUsingMockData = true; // Default to true (using mock data)
+    private string _apiEndpoint = "";
 
     protected override void OnInitialized()
     {
+        // Get the API endpoint from configuration
+        _apiEndpoint = Configuration["ApiBaseUrl"] ?? "http://localhost:3000";
+        
         if (ApiProxy != null)
         {
             _isUsingMockData = ApiProxy.IsUsingMockData;
