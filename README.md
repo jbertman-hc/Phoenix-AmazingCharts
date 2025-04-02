@@ -1,4 +1,4 @@
-# AmazingCharts EHR Application
+# Phoenix-AmazingCharts EHR Application
 
 A modern Electronic Health Records (EHR) application built with Blazor WebAssembly and MudBlazor, featuring a robust API fallback mechanism.
 
@@ -75,7 +75,7 @@ Run the setup script to install dependencies and prepare the environment:
      ```
    - Start the Blazor application:
      ```bash
-     cd AmazingCharts
+     cd Phoenix-AmazingCharts
      dotnet run --urls=http://localhost:5002
      ```
 
@@ -87,6 +87,7 @@ Run the setup script to install dependencies and prepare the environment:
 - **Health Check Improvements**: Enhanced API health check mechanism using `/api/Addendum/1` endpoint
 - **Startup Scripts**: Added convenient setup.sh and restart.sh scripts
 - **Port Configuration**: Configured to use port 5002 for the Blazor app and port 3000 for the proxy
+- **Project Renamed**: Renamed project from swagger-blank to Phoenix-AmazingCharts
 - **Data Source Indicator**: Added visual indicator showing the current data source
 
 ## Detailed Documentation

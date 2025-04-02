@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔧 Setting up AmazingCharts EHR Application..."
+echo "🔧 Setting up Phoenix-AmazingCharts EHR Application..."
 
 # Navigate to the project directory
 cd "$(dirname "$0")"

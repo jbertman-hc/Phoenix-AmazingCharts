@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔄 Restarting AmazingCharts EHR Application..."
+echo "🔄 Restarting Phoenix-AmazingCharts EHR Application..."
 
 # Kill specific processes using our ports
 echo "🛑 Stopping any running processes..."
