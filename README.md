@@ -55,13 +55,13 @@ The application follows a three-tier architecture:
 
 ## Current Status
 
-The application is in development with the following status:
+The application is fully connected to the live API:
 
-- Frontend UI is implemented with mock data
-- API connection is configured but not yet retrieving real data
-- Mock data services provide placeholder information for development and testing
+- Frontend UI is implemented with live data from the API
+- API connection is configured and retrieving real data
+- Visual indicator shows the live API connection status
 
-## Features in Development
+## Features
 
 - **Dashboard**: Display of key metrics and activities
 - **Patient Management**: Patient information and history
@@ -69,6 +69,7 @@ The application is in development with the following status:
 - **Messaging**: Communication between providers
 - **Lab Results**: Patient lab results
 - **Billing**: Claims processing
+- **Theme Settings**: Light/dark mode toggle for user preference
 
 ## Getting Started
 
@@ -87,11 +88,11 @@ The application is in development with the following status:
 
 The application is configured to connect to an Azure-hosted API service at `https://apiserviceswin20250318.azurewebsites.net/`. The proxy server handles CORS issues and forwards requests to this API.
 
-## Fallback Strategy
+## Data Source Strategy
 
-The application implements a fallback strategy:
+The application is now configured to use the live API exclusively:
 
-1. Attempts to connect to the API
-2. Falls back to mock data when the API is unavailable
-3. Periodically checks API health
-4. Provides visual indication of the current data source (API or mock)
+1. Connects directly to the API for all data
+2. Provides error handling for API unavailability
+3. Displays visual indication of the live API connection
+4. Performs periodic health checks to monitor API status

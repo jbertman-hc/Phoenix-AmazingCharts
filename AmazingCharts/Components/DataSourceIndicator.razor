@@ -3,22 +3,21 @@
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @implements IDisposable
 
+@* 
+    DataSourceIndicator component displays the current data source status.
+    It always shows "Using Live API" with a green indicator since the application
+    is now configured to use the live API exclusively.
+*@
+
 @if (ApiProxy != null)
 {
-    <div class="data-source-indicator @(_isUsingMockData ? "mock" : "live")">
-        <MudIcon Icon="@(_isUsingMockData ? @Icons.Material.Filled.CloudOff : @Icons.Material.Filled.Cloud)" 
-                Color="@(_isUsingMockData ? Color.Error : Color.Success)" 
+    <div class="data-source-indicator live">
+        <MudIcon Icon="@Icons.Material.Filled.Cloud" 
+                Color="Color.Success" 
                 Size="Size.Small" />
-        @if (_isUsingMockData)
-        {
-            <span class="ml-2">Using Mock Data</span>
-        }
-        else
-        {
-            <MudTooltip Text="@($"API Endpoint: {_apiEndpoint}")">
-                <span class="ml-2">Using Live API</span>
-            </MudTooltip>
-        }
+        <MudTooltip Text="@($"API Endpoint: {_apiEndpoint}")">
+            <span class="ml-2">Using Live API</span>
+        </MudTooltip>
     </div>
 }
 
@@ -32,45 +31,22 @@
         margin: 4px;
     }
     
-    .data-source-indicator.mock {
-        background-color: rgba(244, 67, 54, 0.1);
-    }
-    
     .data-source-indicator.live {
         background-color: rgba(76, 175, 80, 0.1);
     }
 </style>
 
 @code {
-    private bool _isUsingMockData = true; // Default to true (using mock data)
     private string _apiEndpoint = "";
 
     protected override void OnInitialized()
     {
         // Get the API endpoint from configuration
         _apiEndpoint = Configuration["ApiBaseUrl"] ?? "http://localhost:3000";
-        
-        if (ApiProxy != null)
-        {
-            _isUsingMockData = ApiProxy.IsUsingMockData;
-            ApiProxy.DataSourceChanged += OnDataSourceChanged;
-        }
-    }
-
-    private async void OnDataSourceChanged(object sender, DataSourceChangedEventArgs e)
-    {
-        if (e != null)
-        {
-            _isUsingMockData = !e.IsUsingLiveData;
-            await InvokeAsync(StateHasChanged);
-        }
     }
 
     public void Dispose()
     {
-        if (ApiProxy != null)
-        {
-            ApiProxy.DataSourceChanged -= OnDataSourceChanged;
-        }
+        // No need to unsubscribe from events since we're not subscribing anymore
     }
 }

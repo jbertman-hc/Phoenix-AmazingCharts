@@ -12,8 +12,12 @@ using Microsoft.Extensions.Configuration;
 namespace AmazingCharts.ApiClient
 {
     /// <summary>
-    /// Proxy service that attempts to use the live API endpoint first,
-    /// and falls back to mock data if the API is unavailable or returns an error.
+    /// Proxy service that connects to the live API endpoint.
+    /// This service is responsible for:
+    /// 1. Connecting to the API via the proxy server
+    /// 2. Performing periodic health checks to monitor API status
+    /// 3. Providing visual indication of the API connection status
+    /// 4. Handling API errors with appropriate logging
     /// </summary>
     public class ApiProxyService : IEhrApiClient, IDisposable
     {
@@ -22,7 +26,6 @@ namespace AmazingCharts.ApiClient
         private readonly ILogger<ApiProxyService> _logger;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
-        private bool _useApiEndpoint = false;
         private Timer _healthCheckTimer;
         private const int HealthCheckIntervalMs = 30000; // Check every 30 seconds
         private string _proxyUrl = "http://localhost:3000"; // Default proxy URL
@@ -51,9 +54,7 @@ namespace AmazingCharts.ApiClient
                 _proxyUrl = configProxyUrl;
             }
             
-            // Start with mock data
-            _useApiEndpoint = false;
-            _logger.LogInformation("Starting with mock data. Will attempt to connect to API.");
+            _logger.LogInformation("Starting with live API data.");
             
             // Start periodic health checks with a delay to allow the application to fully initialize
             _healthCheckTimer = new Timer(async _ => await CheckApiAvailabilityAsync(), null, 5000, HealthCheckIntervalMs);
@@ -64,47 +65,35 @@ namespace AmazingCharts.ApiClient
             _healthCheckTimer?.Dispose();
         }
 
-        public bool IsUsingMockData => !_useApiEndpoint;
+        public bool IsUsingMockData => false; // Always return false since we're always using live data
 
         private async Task CheckApiAvailabilityAsync()
         {
             try
             {
-                var wasUsingMockData = !_useApiEndpoint;
-                _logger.LogInformation($"Performing API health check. Currently using {(wasUsingMockData ? "mock data" : "live API data")}");
+                _logger.LogInformation("Performing API health check.");
                 
                 var isHealthy = await CheckHealthAsync();
                 
-                if (isHealthy && wasUsingMockData)
+                if (!isHealthy)
                 {
-                    _useApiEndpoint = true;
-                    _logger.LogInformation("API is now available. Switching to live data.");
-                    OnDataSourceChanged(true);
-                }
-                else if (!isHealthy && !wasUsingMockData)
-                {
-                    _useApiEndpoint = false;
-                    _logger.LogWarning("API is not available. Falling back to mock data.");
-                    OnDataSourceChanged(false);
+                    _logger.LogWarning("API health check failed. Please check the API connection.");
+                    // We no longer fall back to mock data, just log the warning
                 }
                 else
                 {
-                    _logger.LogInformation($"No change in data source. Still using {(_useApiEndpoint ? "live API data" : "mock data")}");
+                    _logger.LogInformation("API health check successful.");
                 }
             }
             catch (Exception ex)
             {
-                _useApiEndpoint = false;
-                _logger.LogError(ex, "Error during API health check. Using mock data.");
-                OnDataSourceChanged(false);
+                _logger.LogError(ex, "Error during API health check.");
             }
         }
 
-        // Notify subscribers when data source changes
         private void OnDataSourceChanged(bool isUsingLiveData)
         {
-            _logger.LogInformation($"Data source changed to {(isUsingLiveData ? "live API data" : "mock data")}. Notifying subscribers.");
-            DataSourceChanged?.Invoke(this, new DataSourceChangedEventArgs(isUsingLiveData));
+            DataSourceChanged?.Invoke(this, new DataSourceChangedEventArgs { IsUsingLiveData = isUsingLiveData });
         }
 
         // Health endpoint
@@ -166,409 +155,223 @@ namespace AmazingCharts.ApiClient
         // Addendum endpoints
         public async Task<AddendumModel> GetAddendumAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAddendumAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAddendumAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAddendumAsync(id);
             }
-            
-            // Return mock data
-            return new AddendumModel { 
-                Id = id, 
-                PatientId = 1, 
-                Content = "Sample addendum content",
-                CreatedDate = DateTime.Now.AddDays(-5),
-                CreatedBy = "Dr. Smith"
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetAddendumAsync.");
+                throw;
+            }
         }
 
         public async Task<List<AddendumModel>> GetAddendumsByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAddendumsByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAddendumsByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAddendumsByPatientIdAsync(patientId);
             }
-            
-            // Return mock data
-            return new List<AddendumModel>
+            catch (Exception ex)
             {
-                new AddendumModel { Id = 1, PatientId = patientId, Content = "Sample addendum 1", CreatedDate = DateTime.Now.AddDays(-10), CreatedBy = "Dr. Johnson" },
-                new AddendumModel { Id = 2, PatientId = patientId, Content = "Sample addendum 2", CreatedDate = DateTime.Now.AddDays(-5), CreatedBy = "Dr. Smith" }
-            };
+                _logger.LogError(ex, "Error calling GetAddendumsByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Allergy endpoints
         public async Task<AllergyModel> GetAllergyAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAllergyAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAllergyAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAllergyAsync(id);
             }
-            
-            // Return mock data
-            return new AllergyModel { 
-                Id = id, 
-                PatientId = 1, 
-                AllergyName = "Sample Allergy", 
-                Severity = "Moderate", 
-                Reaction = "Rash",
-                OnsetDate = DateTime.Now.AddYears(-2),
-                IsActive = true
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetAllergyAsync.");
+                throw;
+            }
         }
 
         public async Task<List<AllergyModel>> GetAllergiesByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAllergiesByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAllergiesByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAllergiesByPatientIdAsync(patientId);
             }
-            
-            // Return mock data
-            return new List<AllergyModel>
+            catch (Exception ex)
             {
-                new AllergyModel { Id = 1, PatientId = patientId, AllergyName = "Penicillin", Severity = "Severe", Reaction = "Anaphylaxis", OnsetDate = DateTime.Now.AddYears(-5), IsActive = true },
-                new AllergyModel { Id = 2, PatientId = patientId, AllergyName = "Peanuts", Severity = "Moderate", Reaction = "Hives", OnsetDate = DateTime.Now.AddYears(-3), IsActive = true }
-            };
+                _logger.LogError(ex, "Error calling GetAllergiesByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Appointment endpoints
         public async Task<AppointmentModel> GetAppointmentAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAppointmentAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAppointmentAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAppointmentAsync(id);
             }
-            
-            // Return mock data from appointments
-            var appointment = _mockDataService.GetAppointments().Find(a => a.Id == id);
-            return appointment ?? new AppointmentModel { 
-                Id = id, 
-                PatientName = "Not found", 
-                AppointmentType = "Unknown",
-                StartTime = DateTime.Now.AddDays(1),
-                EndTime = DateTime.Now.AddDays(1).AddHours(1),
-                Status = "Unknown"
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetAppointmentAsync.");
+                throw;
+            }
         }
 
         public async Task<List<AppointmentModel>> GetAppointmentsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetAppointmentsByDateRangeAsync(startDate, endDate);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetAppointmentsByDateRangeAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetAppointmentsByDateRangeAsync(startDate, endDate);
             }
-            
-            // Return mock data
-            var appointments = _mockDataService.GetAppointments().FindAll(a => a.StartTime >= startDate && a.EndTime <= endDate);
-            return appointments.Count > 0 ? appointments : _mockDataService.GetAppointments();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetAppointmentsByDateRangeAsync.");
+                throw;
+            }
         }
 
         // Billing endpoints
         public async Task<ClaimModel> GetBillingAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetBillingAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetBillingAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetBillingAsync(id);
             }
-            
-            // Return mock data
-            var claim = _mockDataService.GetClaims().Find(c => c.Id == id);
-            return claim ?? new ClaimModel { 
-                Id = id, 
-                PatientName = "Not found", 
-                Amount = 0.00m,
-                Status = "Unknown",
-                ClaimDate = DateTime.Now
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetBillingAsync.");
+                throw;
+            }
         }
 
         public async Task<List<ClaimModel>> GetBillingsByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetBillingsByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetBillingsByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetBillingsByPatientIdAsync(patientId);
             }
-            
-            // Return mock data
-            return _mockDataService.GetClaims().FindAll(c => c.PatientId == patientId);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetBillingsByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Demographics endpoints
         public async Task<PatientModel> GetDemographicsAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetDemographicsAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetDemographicsAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetDemographicsAsync(id);
             }
-            
-            // Return mock data
-            var patient = _mockDataService.GetPatients().Find(p => p.Id == id);
-            return patient ?? new PatientModel { 
-                Id = id, 
-                FirstName = "Unknown", 
-                LastName = "Patient",
-                DateOfBirth = DateTime.Now.AddYears(-30)
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetDemographicsAsync.");
+                throw;
+            }
         }
 
         public async Task<List<PatientModel>> GetDemographicsByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetDemographicsByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetDemographicsByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetDemographicsByPatientIdAsync(patientId);
             }
-            
-            // Return mock data - typically there would be only one demographic record per patient
-            var patient = _mockDataService.GetPatients().Find(p => p.Id == patientId);
-            return patient != null ? new List<PatientModel> { patient } : new List<PatientModel>();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetDemographicsByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Lab endpoints
         public async Task<LabResultModel> GetLabResultAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetLabResultAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetLabResultAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetLabResultAsync(id);
             }
-            
-            // Return mock data
-            var labResult = _mockDataService.GetLabResults().Find(l => l.Id == id);
-            return labResult ?? new LabResultModel { 
-                Id = id, 
-                TestName = "Unknown", 
-                Status = "Not Found",
-                TestDate = DateTime.Now.AddDays(-7)
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetLabResultAsync.");
+                throw;
+            }
         }
 
         public async Task<List<LabResultModel>> GetLabResultsByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetLabResultsByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetLabResultsByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetLabResultsByPatientIdAsync(patientId);
             }
-            
-            // Return mock data
-            return _mockDataService.GetLabResults().FindAll(l => l.PatientId == patientId);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetLabResultsByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Medication endpoints
         public async Task<MedicationModel> GetMedicationAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetMedicationAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetMedicationAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetMedicationAsync(id);
             }
-            
-            // Return mock data
-            return new MedicationModel { 
-                Id = id, 
-                Name = "Sample Medication", 
-                Dosage = "10mg", 
-                Frequency = "Once daily",
-                StartDate = DateTime.Now.AddMonths(-3),
-                Prescriber = "Dr. Smith",
-                IsActive = true
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetMedicationAsync.");
+                throw;
+            }
         }
 
         public async Task<List<MedicationModel>> GetMedicationsByPatientIdAsync(int patientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetMedicationsByPatientIdAsync(patientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetMedicationsByPatientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetMedicationsByPatientIdAsync(patientId);
             }
-            
-            // Return mock data
-            return new List<MedicationModel>
+            catch (Exception ex)
             {
-                new MedicationModel { Id = 1, PatientId = patientId, Name = "Lisinopril", Dosage = "10mg", Frequency = "Once daily", StartDate = DateTime.Now.AddMonths(-6), Prescriber = "Dr. Smith", IsActive = true },
-                new MedicationModel { Id = 2, PatientId = patientId, Name = "Metformin", Dosage = "500mg", Frequency = "Twice daily", StartDate = DateTime.Now.AddMonths(-3), Prescriber = "Dr. Johnson", IsActive = true }
-            };
+                _logger.LogError(ex, "Error calling GetMedicationsByPatientIdAsync.");
+                throw;
+            }
         }
 
         // Message endpoints
         public async Task<MessageModel> GetMessageAsync(int id)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetMessageAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetMessageAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetMessageAsync(id);
             }
-            
-            // Return mock data from the message with the matching id
-            var message = _mockDataService.GetMessages().Find(m => m.Id == id);
-            return message ?? new MessageModel { 
-                Id = id, 
-                Subject = "Not found", 
-                Body = "Message not found",
-                DateSent = DateTime.Now
-            };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetMessageAsync.");
+                throw;
+            }
         }
 
         public async Task<List<MessageModel>> GetMessagesByRecipientIdAsync(string recipientId)
         {
-            if (_useApiEndpoint)
+            try
             {
-                try
-                {
-                    return await _apiClient.GetMessagesByRecipientIdAsync(recipientId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calling GetMessagesByRecipientIdAsync. Falling back to mock data.");
-                    _useApiEndpoint = false;
-                    OnDataSourceChanged(false);
-                }
+                return await _apiClient.GetMessagesByRecipientIdAsync(recipientId);
             }
-            
-            // Return mock data
-            return _mockDataService.GetMessages().FindAll(m => m.RecipientName == recipientId);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetMessagesByRecipientIdAsync.");
+                throw;
+            }
         }
     }
 
     // Event args for data source change notifications
     public class DataSourceChangedEventArgs : EventArgs
     {
-        public bool IsUsingLiveData { get; }
-
-        public DataSourceChangedEventArgs(bool isUsingLiveData)
-        {
-            IsUsingLiveData = isUsingLiveData;
-        }
+        public bool IsUsingLiveData { get; set; } = true;
     }
 }
