@@ -1,0 +1,122 @@
+@using AmazingCharts.Services
+@inject AiAssistantService AiAssistantService
+
+<div class="d-flex flex-column" style="height: 100%;">
+    <div class="flex-grow-1 overflow-auto mb-4" style="height: calc(100% - 120px);">
+        <MudPaper Elevation="0" Class="pa-3 mb-2 rounded-lg" Style="background-color: #f5f5f5;">
+            <MudText Typo="Typo.body1">Hello, Dr. Bertman. How can I assist you today?</MudText>
+            <MudText Typo="Typo.caption" Class="mt-1">AI Assistant - @DateTime.Now.ToString("h:mm tt")</MudText>
+        </MudPaper>
+
+        @foreach (var message in chatMessages)
+        {
+            @if (message.IsUserMessage)
+            {
+                <MudPaper Elevation="0" Class="pa-3 mb-2 rounded-lg d-flex flex-row-reverse" Style="background-color: #e3f2fd;">
+                    <div>
+                        <MudText Typo="Typo.body1">@message.Content</MudText>
+                        <MudText Typo="Typo.caption" Class="mt-1 d-flex justify-end">You - @message.Timestamp.ToString("h:mm tt")</MudText>
+                    </div>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Elevation="0" Class="pa-3 mb-2 rounded-lg" Style="background-color: #f5f5f5;">
+                    <MudText Typo="Typo.body1">@message.Content</MudText>
+                    <MudText Typo="Typo.caption" Class="mt-1">AI Assistant - @message.Timestamp.ToString("h:mm tt")</MudText>
+                </MudPaper>
+            }
+        }
+
+        @if (isLoading)
+        {
+            <MudPaper Elevation="0" Class="pa-3 mb-2 rounded-lg" Style="background-color: #f5f5f5;">
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-2" />
+                <MudText Typo="Typo.caption">AI Assistant is thinking...</MudText>
+            </MudPaper>
+        }
+    </div>
+
+    <div class="mt-auto">
+        <MudPaper Elevation="0" Class="pa-2 rounded-lg" Style="background-color: #f5f5f5;">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="userInput" Label="Ask me anything..." Variant="Variant.Outlined" 
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" 
+                                  OnAdornmentClick="SendMessage" OnKeyDown="@OnKeyDown" Immediate="true"
+                                  Disabled="@isLoading" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudChipSet T="string">
+                        <MudChip T="string" Color="Color.Primary" OnClick="@(async () => await QuickPrompt("What labs are pending review?"))">Pending Labs</MudChip>
+                        <MudChip T="string" Color="Color.Primary" OnClick="@(async () => await QuickPrompt("Summarize today's schedule"))">Today's Schedule</MudChip>
+                        <MudChip T="string" Color="Color.Primary" OnClick="@(async () => await QuickPrompt("Help with diabetes treatment guidelines"))">Diabetes Guidelines</MudChip>
+                    </MudChipSet>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </div>
+</div>
+
+@code {
+    private string userInput = "";
+    private bool isLoading = false;
+    private List<ChatMessage> chatMessages = new List<ChatMessage>();
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userInput))
+            return;
+
+        var userMessage = new ChatMessage
+        {
+            Content = userInput,
+            IsUserMessage = true,
+            Timestamp = DateTime.Now
+        };
+
+        chatMessages.Add(userMessage);
+        var query = userInput;
+        userInput = "";
+        isLoading = true;
+        StateHasChanged();
+
+        // Simulate a delay for the AI response
+        await Task.Delay(1000);
+
+        // Get response from AI service
+        var response = await AiAssistantService.GetResponseAsync(query);
+
+        var aiMessage = new ChatMessage
+        {
+            Content = response,
+            IsUserMessage = false,
+            Timestamp = DateTime.Now
+        };
+
+        chatMessages.Add(aiMessage);
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task QuickPrompt(string prompt)
+    {
+        userInput = prompt;
+        await SendMessage();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(userInput))
+        {
+            await SendMessage();
+        }
+    }
+
+    private class ChatMessage
+    {
+        public string Content { get; set; } = "";
+        public bool IsUserMessage { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}

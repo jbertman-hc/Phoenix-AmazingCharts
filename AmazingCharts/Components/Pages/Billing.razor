@@ -1,0 +1,273 @@
+@page "/billing"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject BillingService BillingService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.h4">Billing & Claims</MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New Claim</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-4 mb-4">
+                <MudNavMenu>
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Claims</MudText>
+                    <MudNavLink Href="billing" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ErrorOutline">
+                        Denied Claims
+                        @if (deniedCount > 0)
+                        {
+                            <MudBadge Color="Color.Error" Content="@deniedCount" Overlap="true" Class="ml-2" />
+                        }
+                    </MudNavLink>
+                    <MudNavLink Href="billing?status=pending" Icon="@Icons.Material.Filled.HourglassEmpty">Pending Claims</MudNavLink>
+                    <MudNavLink Href="billing?status=approved" Icon="@Icons.Material.Filled.CheckCircleOutline">Approved Claims</MudNavLink>
+                    <MudNavLink Href="billing?status=all" Icon="@Icons.Material.Filled.List">All Claims</MudNavLink>
+                    
+                    <MudDivider Class="my-4" />
+                    
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Reports</MudText>
+                    <MudNavLink Href="billing/reports/revenue" Icon="@Icons.Material.Filled.BarChart">Revenue</MudNavLink>
+                    <MudNavLink Href="billing/reports/aging" Icon="@Icons.Material.Filled.DateRange">Aging Report</MudNavLink>
+                    <MudNavLink Href="billing/reports/insurance" Icon="@Icons.Material.Filled.Business">Insurance Analysis</MudNavLink>
+                </MudNavMenu>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="9">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudTextField @bind-Value="searchText" Label="Search Claims" Variant="Variant.Outlined" 
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" Margin="Margin.Dense" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="Filter By" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4">
+                            <MudSelectItem Value="@("all")">All Insurances</MudSelectItem>
+                            <MudSelectItem Value="@("medicare")">Medicare</MudSelectItem>
+                            <MudSelectItem Value="@("medicaid")">Medicaid</MudSelectItem>
+                            <MudSelectItem Value="@("bcbs")">Blue Cross</MudSelectItem>
+                            <MudSelectItem Value="@("aetna")">Aetna</MudSelectItem>
+                            <MudSelectItem Value="@("cigna")">Cigna</MudSelectItem>
+                            <MudSelectItem Value="@("uhc")">United Healthcare</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                @if (claims == null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                }
+                else if (!claims.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Class="my-4">No claims found.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@claims" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" 
+                             LoadingProgressColor="Color.Info" Filter="new Func<ClaimModel, bool>(FilterClaims)"
+                             @bind-SelectedItem="selectedClaim">
+                        <HeaderContent>
+                            <MudTh>Claim #</MudTh>
+                            <MudTh>Patient</MudTh>
+                            <MudTh>Date</MudTh>
+                            <MudTh>Amount</MudTh>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Claim #">@context.ClaimNumber</MudTd>
+                            <MudTd DataLabel="Patient">@context.PatientName</MudTd>
+                            <MudTd DataLabel="Date">@context.ServiceDate.ToString("MM/dd/yyyy")</MudTd>
+                            <MudTd DataLabel="Amount">@context.Amount.ToString("C")</MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                                    @context.Status
+                                </MudChip>
+                            </MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" OnClick="@(() => ViewClaim(context))" />
+                                @if (context.Status == "Denied")
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="@(() => ResubmitClaim(context))" />
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+
+                @if (selectedClaim != null)
+                {
+                    <MudDivider Class="my-4" />
+                    <MudPaper Class="pa-4 mt-4" Elevation="0">
+                        <MudGrid>
+                            <MudItem xs="12" Class="d-flex justify-space-between align-center">
+                                <MudText Typo="Typo.h5">Claim @selectedClaim.ClaimNumber</MudText>
+                                <div>
+                                    @if (selectedClaim.Status == "Denied")
+                                    {
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ResubmitClaim(selectedClaim))">
+                                            Resubmit Claim
+                                        </MudButton>
+                                    }
+                                    <MudIconButton Icon="@Icons.Material.Filled.Print" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Share" />
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.subtitle1">
+                                    Patient: @selectedClaim.PatientName
+                                </MudText>
+                                <MudText Typo="Typo.subtitle2">
+                                    Insurance: @selectedClaim.InsuranceProvider
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    Service Date: @selectedClaim.ServiceDate.ToString("MM/dd/yyyy")
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    Submission Date: @selectedClaim.SubmissionDate.ToString("MM/dd/yyyy")
+                                </MudText>
+                                @if (selectedClaim.ResponseDate.HasValue)
+                                {
+                                    <MudText Typo="Typo.caption">
+                                        Response Date: @selectedClaim.ResponseDate.Value.ToString("MM/dd/yyyy")
+                                    </MudText>
+                                }
+                            </MudItem>
+                            <MudItem xs="12" md="6" Class="d-flex flex-column align-end">
+                                <MudChip T="string" Color="@GetStatusColor(selectedClaim.Status)" Size="Size.Medium">
+                                    @selectedClaim.Status
+                                </MudChip>
+                                <MudText Typo="Typo.h6" Class="mt-2">@selectedClaim.Amount.ToString("C")</MudText>
+                                @if (selectedClaim.PaidAmount.HasValue)
+                                {
+                                    <MudText Typo="Typo.body1">Paid: @selectedClaim.PaidAmount.Value.ToString("C")</MudText>
+                                }
+                                @if (selectedClaim.PatientResponsibility.HasValue)
+                                {
+                                    <MudText Typo="Typo.body1">Patient Responsibility: @selectedClaim.PatientResponsibility.Value.ToString("C")</MudText>
+                                }
+                            </MudItem>
+                            
+                            @if (selectedClaim.Status == "Denied" && !string.IsNullOrEmpty(selectedClaim.DenialReason))
+                            {
+                                <MudItem xs="12" Class="mt-4">
+                                    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+                                        <MudText Typo="Typo.body1">Denial Reason: @selectedClaim.DenialReason</MudText>
+                                    </MudAlert>
+                                </MudItem>
+                            }
+                            
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.h6">Diagnosis Codes</MudText>
+                                <MudPaper Class="pa-4 mt-2" Elevation="0" Outlined="true">
+                                    <MudText>@(string.IsNullOrEmpty(selectedClaim.DiagnosisCodes) ? "No diagnosis codes" : selectedClaim.DiagnosisCodes)</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.h6">Procedure Codes</MudText>
+                                <MudPaper Class="pa-4 mt-2" Elevation="0" Outlined="true">
+                                    <MudText>@(string.IsNullOrEmpty(selectedClaim.ProcedureCodes) ? "No procedure codes" : selectedClaim.ProcedureCodes)</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                                <MudTextField T="string" @bind-Value="selectedClaim.Notes" 
+                                            Label="Add notes about this claim" Variant="Variant.Outlined" 
+                                            Lines="3" Class="mt-2" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool loading = true;
+    private List<ClaimModel>? claims;
+    private ClaimModel? selectedClaim;
+    private string searchText = "";
+    private int deniedCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClaims();
+    }
+
+    private async Task LoadClaims()
+    {
+        loading = true;
+        
+        claims = await BillingService.GetDeniedClaimsAsync();
+        deniedCount = claims.Count;
+        
+        loading = false;
+    }
+
+    private bool FilterClaims(ClaimModel claim)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        return claim.ClaimNumber.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || claim.PatientName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || claim.InsuranceProvider.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || (claim.DiagnosisCodes != null && claim.DiagnosisCodes.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            || (claim.ProcedureCodes != null && claim.ProcedureCodes.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Approved" => Color.Success,
+            "Pending" => Color.Warning,
+            "Denied" => Color.Error,
+            "Partially Paid" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private void ViewClaim(ClaimModel claim)
+    {
+        selectedClaim = claim;
+    }
+
+    private async Task ResubmitClaim(ClaimModel claim)
+    {
+        if (claim == null) return;
+        
+        var success = await BillingService.ResubmitClaimAsync(claim.Id);
+        
+        if (success)
+        {
+            claim.Status = "Pending";
+            claim.SubmissionDate = DateTime.Now;
+            claim.ResponseDate = null;
+            claim.DenialReason = null;
+            
+            // Update the denied count
+            deniedCount = claims?.Count(c => c.Status == "Denied") ?? 0;
+            
+            StateHasChanged();
+        }
+    }
+}

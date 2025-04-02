@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .status {
+            margin-bottom: 20px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>EHR API Test</h1>
+    
+    <div class="status" id="status">
+        <p>Status: Ready to test</p>
+    </div>
+    
+    <div>
+        <button onclick="testHealthCheck()">Test Health Check</button>
+        <button onclick="testPatients()">Test Patients API</button>
+        <button onclick="testAppointments()">Test Appointments API</button>
+        <button onclick="testLabResults()">Test Lab Results API</button>
+        <button onclick="testMessages()">Test Messages API</button>
+    </div>
+    
+    <h2>Response:</h2>
+    <pre id="response">No response yet</pre>
+    
+    <script>
+        const proxyUrl = 'http://localhost:3000';
+        
+        function updateStatus(message, isError = false) {
+            const statusElement = document.getElementById('status');
+            statusElement.innerHTML = `<p class="${isError ? 'error' : 'success'}">Status: ${message}</p>`;
+        }
+        
+        function displayResponse(data) {
+            document.getElementById('response').textContent = typeof data === 'object' 
+                ? JSON.stringify(data, null, 2) 
+                : data;
+        }
+        
+        async function makeRequest(endpoint) {
+            try {
+                updateStatus(`Fetching ${endpoint}...`);
+                const response = await fetch(`${proxyUrl}/${endpoint}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateStatus(`Successfully fetched ${endpoint}`);
+                displayResponse(data);
+                return data;
+            } catch (error) {
+                updateStatus(`Error: ${error.message}`, true);
+                displayResponse(`Error: ${error.message}`);
+                console.error('Request error:', error);
+            }
+        }
+        
+        async function testHealthCheck() {
+            try {
+                updateStatus('Testing health check...');
+                const response = await fetch(`${proxyUrl}/api/health`);
+                
+                if (response.ok) {
+                    updateStatus('Health check successful!');
+                    displayResponse('API is healthy');
+                } else {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+            } catch (error) {
+                updateStatus(`Health check failed: ${error.message}`, true);
+                displayResponse(`Error: ${error.message}`);
+                console.error('Health check error:', error);
+            }
+        }
+        
+        async function testPatients() {
+            await makeRequest('api/patients');
+        }
+        
+        async function testAppointments() {
+            await makeRequest('api/appointments');
+        }
+        
+        async function testLabResults() {
+            await makeRequest('api/lab-results');
+        }
+        
+        async function testMessages() {
+            await makeRequest('api/messages');
+        }
+    </script>
+</body>
+</html>

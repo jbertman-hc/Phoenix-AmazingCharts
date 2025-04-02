@@ -1,0 +1,276 @@
+@page "/schedule"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject ScheduleService ScheduleService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.h4">Schedule</MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New Appointment</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-4 mb-4">
+                <MudDatePicker @bind-Date="selectedDate" Label="Select Date" DisableToolbar="false" />
+                
+                <MudDivider Class="my-4" />
+                
+                <MudText Typo="Typo.subtitle1" Class="mb-2">View Options</MudText>
+                <MudRadioGroup T="string" @bind-Value="viewOption">
+                    <MudRadio T="string" Value="@("day")" Color="Color.Primary">Day</MudRadio>
+                    <MudRadio T="string" Value="@("week")" Color="Color.Primary">Week</MudRadio>
+                    <MudRadio T="string" Value="@("month")" Color="Color.Primary">Month</MudRadio>
+                </MudRadioGroup>
+                
+                <MudDivider Class="my-4" />
+                
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Providers</MudText>
+                <MudCheckBox T="bool" Checked="@showAllProviders" OnChange="@((bool val) => ShowAllProvidersChanged(val))" Color="Color.Primary">Show All Providers</MudCheckBox>
+                
+                <MudDivider Class="my-4" />
+                
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Appointment Types</MudText>
+                <MudCheckBox T="bool" Checked="@showAllTypes" OnChange="@((bool val) => ShowAllTypesChanged(val))" Color="Color.Primary">Show All Types</MudCheckBox>
+                @if (!showAllTypes)
+                {
+                    <div class="ml-4 mt-2">
+                        <MudCheckBox T="bool" Checked="@showNewPatient" OnChange="@((bool val) => ShowNewPatientChanged(val))" Color="Color.Primary">New Patient</MudCheckBox>
+                        <MudCheckBox T="bool" Checked="@showFollowUp" OnChange="@((bool val) => ShowFollowUpChanged(val))" Color="Color.Primary">Follow-up</MudCheckBox>
+                        <MudCheckBox T="bool" Checked="@showAnnualPhysical" OnChange="@((bool val) => ShowAnnualPhysicalChanged(val))" Color="Color.Primary">Annual Physical</MudCheckBox>
+                        <MudCheckBox T="bool" Checked="@showLabResults" OnChange="@((bool val) => ShowLabResultsChanged(val))" Color="Color.Primary">Lab Results Review</MudCheckBox>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="9">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" Class="d-flex justify-space-between align-center mb-4">
+                        <div>
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="PreviousDay" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Today" OnClick="@(() => selectedDate = DateTime.Today)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="NextDay" />
+                        </div>
+                        <MudText Typo="Typo.h5">@selectedDate?.ToString("dddd, MMMM d, yyyy")</MudText>
+                        <div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print">Print</MudButton>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+
+                @if (appointments == null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                }
+                else if (!appointments.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Class="my-4">No appointments scheduled for this day.</MudAlert>
+                    <MudPaper Class="pa-4 my-4" Outlined="true">
+                        <MudGrid>
+                            <MudItem xs="12" Class="d-flex justify-center">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+                                          Size="Size.Large" Class="py-3 px-6">
+                                    Schedule New Appointment
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+                else
+                {
+                    <div class="schedule-container">
+                        @foreach (var timeSlot in GetTimeSlots())
+                        {
+                            <div class="time-slot">
+                                <div class="time-label">@timeSlot.ToString("h:mm tt")</div>
+                                <div class="appointment-slot">
+                                    @{
+                                        var appt = appointments.FirstOrDefault(a => 
+                                            a.StartTime.Hour == timeSlot.Hour && 
+                                            a.StartTime.Minute == timeSlot.Minute);
+                                        
+                                        if (appt != null)
+                                        {
+                                            <MudPaper Class="pa-3 appointment-card" Style="@GetAppointmentCardStyle(appt)" Elevation="2">
+                                                <MudText Typo="Typo.subtitle1">@appt.PatientName</MudText>
+                                                <MudText Typo="Typo.body2">@appt.AppointmentType</MudText>
+                                                <MudText Typo="Typo.caption">
+                                                    @appt.StartTime.ToString("h:mm tt") - @appt.EndTime.ToString("h:mm tt")
+                                                </MudText>
+                                                <div class="mt-2 d-flex justify-end">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                                </div>
+                                            </MudPaper>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .schedule-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .time-slot {
+        display: flex;
+        min-height: 60px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .time-label {
+        width: 100px;
+        padding: 8px;
+        color: #757575;
+        font-size: 14px;
+    }
+    
+    .appointment-slot {
+        flex: 1;
+        padding: 4px;
+        position: relative;
+    }
+    
+    .appointment-card {
+        height: 100%;
+    }
+</style>
+
+@code {
+    private bool loading = true;
+    private List<AppointmentModel>? appointments;
+    private DateTime? selectedDate = DateTime.Today;
+    private string viewOption = "day";
+    private bool showAllProviders = true;
+    private bool showAllTypes = true;
+    private bool showNewPatient = true;
+    private bool showFollowUp = true;
+    private bool showAnnualPhysical = true;
+    private bool showLabResults = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAppointments();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (selectedDate.HasValue)
+        {
+            await LoadAppointments();
+        }
+    }
+
+    private async Task LoadAppointments()
+    {
+        loading = true;
+        
+        if (selectedDate.HasValue)
+        {
+            appointments = await ScheduleService.GetAppointmentsForDateRangeAsync(
+                selectedDate.Value.Date, 
+                selectedDate.Value.Date.AddDays(1).AddSeconds(-1)
+            );
+        }
+        else
+        {
+            appointments = new List<AppointmentModel>();
+        }
+        
+        loading = false;
+    }
+
+    private void PreviousDay()
+    {
+        if (selectedDate.HasValue)
+        {
+            selectedDate = selectedDate.Value.AddDays(-1);
+            LoadAppointments();
+        }
+    }
+
+    private void NextDay()
+    {
+        if (selectedDate.HasValue)
+        {
+            selectedDate = selectedDate.Value.AddDays(1);
+            LoadAppointments();
+        }
+    }
+
+    private List<DateTime> GetTimeSlots()
+    {
+        var slots = new List<DateTime>();
+        var startTime = DateTime.Today.AddHours(8); // 8:00 AM
+        var endTime = DateTime.Today.AddHours(17); // 5:00 PM
+        
+        while (startTime <= endTime)
+        {
+            slots.Add(startTime);
+            startTime = startTime.AddMinutes(30);
+        }
+        
+        return slots;
+    }
+
+    private string GetAppointmentCardStyle(AppointmentModel appointment)
+    {
+        return appointment.AppointmentType switch
+        {
+            "New Patient" => "background-color: #bbdefb;", // Light blue
+            "Follow-up" => "background-color: #c8e6c9;", // Light green
+            "Annual Physical" => "background-color: #d1c4e9;", // Light purple
+            "Lab Results Review" => "background-color: #ffecb3;", // Light amber
+            _ => "background-color: #e0e0e0;" // Light grey
+        };
+    }
+
+    private void ShowAllProvidersChanged(bool value)
+    {
+        showAllProviders = value;
+    }
+
+    private void ShowAllTypesChanged(bool value)
+    {
+        showAllTypes = value;
+    }
+
+    private void ShowNewPatientChanged(bool value)
+    {
+        showNewPatient = value;
+    }
+
+    private void ShowFollowUpChanged(bool value)
+    {
+        showFollowUp = value;
+    }
+
+    private void ShowAnnualPhysicalChanged(bool value)
+    {
+        showAnnualPhysical = value;
+    }
+
+    private void ShowLabResultsChanged(bool value)
+    {
+        showLabResults = value;
+    }
+}

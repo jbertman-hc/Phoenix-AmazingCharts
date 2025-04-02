@@ -1,0 +1,252 @@
+@page "/"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject PatientService PatientService
+@inject ScheduleService ScheduleService
+@inject MessageService MessageService
+@inject LabService LabService
+@inject BillingService BillingService
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.h4">Welcome, Dr. Bertman</MudText>
+            <MudText Typo="Typo.subtitle1">@DateTime.Now.ToString("dddd, MMMM d, yyyy")</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudGrid>
+            <!-- Today's Schedule -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-4 mb-4">
+                    <MudGrid>
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h5" Class="mb-4">Today's Schedule</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex justify-end">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="schedule">View All</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                    
+                    @if (todayAppointments == null)
+                    {
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    }
+                    else if (!todayAppointments.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">No appointments scheduled for today.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@todayAppointments" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" LoadingProgressColor="Color.Info">
+                            <HeaderContent>
+                                <MudTh>Time</MudTh>
+                                <MudTh>Patient</MudTh>
+                                <MudTh>Type</MudTh>
+                                <MudTh>Status</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Time">@context.StartTime.ToString("h:mm tt")</MudTd>
+                                <MudTd DataLabel="Patient">@context.PatientName</MudTd>
+                                <MudTd DataLabel="Type">@context.AppointmentType</MudTd>
+                                <MudTd DataLabel="Status">
+                                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+                                </MudTd>
+                                <MudTd>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <!-- Inbox Messages -->
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 mb-4" Style="height: 300px;">
+                    <MudGrid>
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h5" Class="mb-4">Inbox</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex justify-end">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="messages">View All</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                    
+                    @if (inboxMessages == null)
+                    {
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    }
+                    else if (!inboxMessages.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">No unread messages.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudList T="MessageModel" Clickable="true">
+                            @foreach (var message in inboxMessages.Take(3))
+                            {
+                                <MudListItem T="MessageModel" Value="message">
+                                    <div class="d-flex flex-row">
+                                        <MudAvatar Color="@(message.IsUrgent ? Color.Error : Color.Default)" Class="mr-2">
+                                            @message.SenderName[0]
+                                        </MudAvatar>
+                                        <div>
+                                            <MudText Typo="Typo.body1">@message.Subject</MudText>
+                                            <MudText Typo="Typo.caption">@message.SenderName - @message.DateSent.ToString("MM/dd/yyyy h:mm tt")</MudText>
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <!-- Pending Lab Results -->
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 mb-4" Style="height: 300px;">
+                    <MudGrid>
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h5" Class="mb-4">Pending Lab Results</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex justify-end">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="labs">View All</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                    
+                    @if (pendingLabResults == null)
+                    {
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    }
+                    else if (!pendingLabResults.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">No pending lab results.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudList T="LabResultModel" Clickable="true">
+                            @foreach (var lab in pendingLabResults.Take(3))
+                            {
+                                <MudListItem T="LabResultModel" Value="lab">
+                                    <div class="d-flex flex-row">
+                                        <MudAvatar Color="@(lab.IsUrgent ? Color.Error : Color.Info)" Class="mr-2">
+                                            <MudIcon Icon="@Icons.Material.Filled.Science" />
+                                        </MudAvatar>
+                                        <div>
+                                            <MudText Typo="Typo.body1">@lab.TestName</MudText>
+                                            <MudText Typo="Typo.caption">@lab.PatientName - @lab.ResultDate?.ToString("MM/dd/yyyy")</MudText>
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <!-- Denied Claims -->
+            <MudItem xs="12">
+                <MudPaper Class="pa-4 mb-4">
+                    <MudGrid>
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h5" Class="mb-4">Denied Claims</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex justify-end">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="billing">View All</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                    
+                    @if (deniedClaims == null)
+                    {
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                        <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    }
+                    else if (!deniedClaims.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">No denied claims.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@deniedClaims" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" LoadingProgressColor="Color.Info">
+                            <HeaderContent>
+                                <MudTh>Claim #</MudTh>
+                                <MudTh>Patient</MudTh>
+                                <MudTh>Amount</MudTh>
+                                <MudTh>Denial Reason</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Claim #">@context.ClaimNumber</MudTd>
+                                <MudTd DataLabel="Patient">@context.PatientName</MudTd>
+                                <MudTd DataLabel="Amount">@context.Amount.ToString("C")</MudTd>
+                                <MudTd DataLabel="Denial Reason">@context.DenialReason</MudTd>
+                                <MudTd>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+
+    <!-- AI Assistant Panel -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4 mb-4" Style="height: calc(100vh - 180px);">
+            <MudText Typo="Typo.h5" Class="mb-4">AI Assistant</MudText>
+            <AiAssistantPanel />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool loading = true;
+    private List<AppointmentModel>? todayAppointments;
+    private List<MessageModel>? inboxMessages;
+    private List<LabResultModel>? pendingLabResults;
+    private List<ClaimModel>? deniedClaims;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        
+        // Load data in parallel
+        var appointmentsTask = ScheduleService.GetTodayAppointmentsAsync();
+        var messagesTask = MessageService.GetInboxMessagesAsync();
+        var labResultsTask = LabService.GetPendingLabResultsAsync();
+        var claimsTask = BillingService.GetDeniedClaimsAsync();
+
+        await Task.WhenAll(appointmentsTask, messagesTask, labResultsTask, claimsTask);
+
+        todayAppointments = await appointmentsTask;
+        inboxMessages = (await messagesTask).Where(m => !m.IsRead).ToList();
+        pendingLabResults = await labResultsTask;
+        deniedClaims = await claimsTask;
+        
+        loading = false;
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Confirmed" => Color.Success,
+            "Pending" => Color.Warning,
+            "Canceled" => Color.Error,
+            "Completed" => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

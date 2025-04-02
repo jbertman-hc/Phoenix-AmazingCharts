@@ -1,0 +1,23 @@
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Components.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(Components.Layout.MainLayout)">
+            <MudContainer Class="d-flex flex-column align-center justify-center" Style="height: 70vh;">
+                <MudText Typo="Typo.h3" Class="mb-4">Page Not Found</MudText>
+                <MudIcon Icon="@Icons.Material.Filled.QuestionMark" Size="Size.Large" Class="mb-4" />
+                <MudText Typo="Typo.body1" Class="mb-4">Sorry, there's nothing at this address.</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" StartIcon="@Icons.Material.Filled.Home">
+                    Return to Dashboard
+                </MudButton>
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
+</Router>

@@ -1,0 +1,15 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Test projects
+ApiTestConsole/
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# IDE files
+.vs/
+.vscode/
+*.user

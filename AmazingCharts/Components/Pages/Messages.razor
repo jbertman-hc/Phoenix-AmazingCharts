@@ -1,0 +1,235 @@
+@page "/messages"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject MessageService MessageService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.h4">Messages</MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New Message</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-4 mb-4">
+                <MudNavMenu>
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Folders</MudText>
+                    <MudNavLink Href="messages" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Inbox">
+                        Inbox
+                        @if (unreadCount > 0)
+                        {
+                            <MudBadge Color="Color.Error" Content="@unreadCount" Overlap="true" Class="ml-2" />
+                        }
+                    </MudNavLink>
+                    <MudNavLink Href="messages?folder=sent" Icon="@Icons.Material.Filled.Send">Sent</MudNavLink>
+                    <MudNavLink Href="messages?folder=drafts" Icon="@Icons.Material.Filled.Drafts">Drafts</MudNavLink>
+                    <MudNavLink Href="messages?folder=archived" Icon="@Icons.Material.Filled.Archive">Archived</MudNavLink>
+                    
+                    <MudDivider Class="my-4" />
+                    
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Categories</MudText>
+                    <MudNavLink Href="messages?category=patient" Icon="@Icons.Material.Filled.Person">Patient Messages</MudNavLink>
+                    <MudNavLink Href="messages?category=refill" Icon="@Icons.Material.Filled.Medication">Refill Requests</MudNavLink>
+                    <MudNavLink Href="messages?category=lab" Icon="@Icons.Material.Filled.Science">Lab Results</MudNavLink>
+                    <MudNavLink Href="messages?category=internal" Icon="@Icons.Material.Filled.Business">Internal</MudNavLink>
+                </MudNavMenu>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="9">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudTextField @bind-Value="searchText" Label="Search Messages" Variant="Variant.Outlined" 
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" Margin="Margin.Dense" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="Sort By" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4">
+                            <MudSelectItem Value="@("date_desc")">Date (Newest First)</MudSelectItem>
+                            <MudSelectItem Value="@("date_asc")">Date (Oldest First)</MudSelectItem>
+                            <MudSelectItem Value="@("sender")">Sender Name</MudSelectItem>
+                            <MudSelectItem Value="@("subject")">Subject</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                @if (messages == null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                }
+                else if (!messages.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Class="my-4">No messages found.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@messages" Dense="true" Hover="true" Loading="@loading" 
+                             LoadingProgressColor="Color.Info" Filter="new Func<MessageViewModel, bool>(FilterMessages)"
+                             @bind-SelectedItem="selectedMessage" RowStyleFunc="@RowStyle">
+                        <HeaderContent>
+                            <MudTh>
+                                <MudCheckBox T="bool" Checked="@selectAll" OnChange="@((bool val) => SelectAllChanged(val))" Color="Color.Primary" />
+                            </MudTh>
+                            <MudTh>Sender</MudTh>
+                            <MudTh>Subject</MudTh>
+                            <MudTh>Date</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudCheckBox T="bool" Checked="@context.IsSelected" OnChange="@((bool val) => MessageSelectionChanged(context, val))" Color="Color.Primary" />
+                            </MudTd>
+                            <MudTd DataLabel="Sender">
+                                <div class="d-flex align-center">
+                                    @if (context.IsUrgent)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.PriorityHigh" Color="Color.Error" Size="Size.Small" Class="mr-2" />
+                                    }
+                                    @context.SenderName
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Subject">
+                                <MudText Typo="@(context.IsRead ? Typo.body1 : Typo.body1)" Style="@(context.IsRead ? "" : "font-weight: bold")">
+                                    @context.Subject
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: #757575; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                                    @context.Body
+                                </MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Date">@context.DateSent.ToString("MM/dd/yyyy h:mm tt")</MudTd>
+                            <MudTd>
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Visibility">View</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Reply">Reply</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete">Delete</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Archive">Archive</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead">Mark as Read</MudMenuItem>
+                                </MudMenu>
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+
+                @if (selectedMessage != null)
+                {
+                    <MudDivider Class="my-4" />
+                    <MudPaper Class="pa-4 mt-4" Elevation="0">
+                        <MudGrid>
+                            <MudItem xs="12" Class="d-flex justify-space-between align-center">
+                                <MudText Typo="Typo.h5">@selectedMessage.Subject</MudText>
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Reply" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Archive" />
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.subtitle1">
+                                    From: @selectedMessage.SenderName
+                                </MudText>
+                                <MudText Typo="Typo.subtitle2">
+                                    To: @selectedMessage.RecipientName
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    @selectedMessage.DateSent.ToString("dddd, MMMM d, yyyy h:mm tt")
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText>@selectedMessage.Body</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool loading = true;
+    private List<MessageViewModel>? messages;
+    private MessageViewModel? selectedMessage;
+    private string searchText = "";
+    private bool selectAll = false;
+    private int unreadCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMessages();
+    }
+
+    private async Task LoadMessages()
+    {
+        loading = true;
+        
+        var messageModels = await MessageService.GetInboxMessagesAsync();
+        messages = messageModels.Select(m => new MessageViewModel
+        {
+            Id = m.Id,
+            Subject = m.Subject,
+            Body = m.Body,
+            SenderName = m.SenderName,
+            RecipientName = m.RecipientName,
+            DateSent = m.DateSent,
+            IsRead = m.IsRead,
+            IsUrgent = m.IsUrgent,
+            MessageType = m.MessageType,
+            RelatedPatientId = m.RelatedPatientId,
+            RelatedPatientName = m.RelatedPatientName,
+            IsSelected = false
+        }).ToList();
+        
+        unreadCount = messages.Count(m => !m.IsRead);
+        
+        loading = false;
+    }
+
+    private bool FilterMessages(MessageViewModel message)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        return message.Subject.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || message.Body.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || message.SenderName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || (message.RelatedPatientName != null && message.RelatedPatientName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string RowStyle(MessageViewModel message, int index)
+    {
+        return message.IsRead ? "" : "font-weight: 600;";
+    }
+
+    private void SelectAllChanged(bool value)
+    {
+        selectAll = value;
+        foreach (var message in messages)
+        {
+            message.IsSelected = value;
+        }
+    }
+
+    private void MessageSelectionChanged(MessageViewModel message, bool value)
+    {
+        message.IsSelected = value;
+        // Update selectAll based on whether all messages are selected
+        selectAll = messages.All(m => m.IsSelected);
+    }
+
+    private class MessageViewModel : MessageModel
+    {
+        public bool IsSelected { get; set; }
+    }
+}

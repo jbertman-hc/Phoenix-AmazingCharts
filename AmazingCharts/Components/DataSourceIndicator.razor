@@ -1,0 +1,62 @@
+@using AmazingCharts.ApiClient
+@inject ApiProxyService ApiProxy
+@implements IDisposable
+
+@if (ApiProxy != null)
+{
+    <div class="data-source-indicator @(_isUsingMockData ? "mock" : "live")">
+        <MudIcon Icon="@(_isUsingMockData ? @Icons.Material.Filled.CloudOff : @Icons.Material.Filled.Cloud)" 
+                Color="@(_isUsingMockData ? Color.Error : Color.Success)" 
+                Size="Size.Small" />
+        <span class="ml-2">@(_isUsingMockData ? "Using Mock Data" : "Using Live API")</span>
+    </div>
+}
+
+<style>
+    .data-source-indicator {
+        display: flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin: 4px;
+    }
+    
+    .data-source-indicator.mock {
+        background-color: rgba(244, 67, 54, 0.1);
+    }
+    
+    .data-source-indicator.live {
+        background-color: rgba(76, 175, 80, 0.1);
+    }
+</style>
+
+@code {
+    private bool _isUsingMockData = true; // Default to true (using mock data)
+
+    protected override void OnInitialized()
+    {
+        if (ApiProxy != null)
+        {
+            _isUsingMockData = ApiProxy.IsUsingMockData;
+            ApiProxy.DataSourceChanged += OnDataSourceChanged;
+        }
+    }
+
+    private async void OnDataSourceChanged(object sender, DataSourceChangedEventArgs e)
+    {
+        if (e != null)
+        {
+            _isUsingMockData = !e.IsUsingLiveData;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (ApiProxy != null)
+        {
+            ApiProxy.DataSourceChanged -= OnDataSourceChanged;
+        }
+    }
+}

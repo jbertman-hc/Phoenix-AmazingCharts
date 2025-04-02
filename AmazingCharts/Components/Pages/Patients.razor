@@ -1,0 +1,103 @@
+@page "/patients"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject PatientService PatientService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.h4">Patients</MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">Add Patient</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudTextField @bind-Value="searchText" Label="Search Patients" Variant="Variant.Outlined" 
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" Margin="Margin.Dense" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="Filter By" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4">
+                            <MudSelectItem Value="@("All")">All Patients</MudSelectItem>
+                            <MudSelectItem Value="@("Recent")">Recently Seen</MudSelectItem>
+                            <MudSelectItem Value="@("Upcoming")">Upcoming Appointments</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                @if (patients == null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                }
+                else
+                {
+                    <MudTable Items="@patients" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" 
+                             LoadingProgressColor="Color.Info" Filter="new Func<PatientModel, bool>(FilterPatients)">
+                        <HeaderContent>
+                            <MudTh>Name</MudTh>
+                            <MudTh>DOB</MudTh>
+                            <MudTh>Age</MudTh>
+                            <MudTh>Gender</MudTh>
+                            <MudTh>Phone</MudTh>
+                            <MudTh>Insurance</MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Name">
+                                <MudLink Href="@($"patients/{context.Id}")">@context.FullName</MudLink>
+                            </MudTd>
+                            <MudTd DataLabel="DOB">@context.DateOfBirth.ToString("MM/dd/yyyy")</MudTd>
+                            <MudTd DataLabel="Age">@context.Age</MudTd>
+                            <MudTd DataLabel="Gender">@context.Gender</MudTd>
+                            <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
+                            <MudTd DataLabel="Insurance">@context.InsuranceProvider</MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool loading = true;
+    private List<PatientModel>? patients;
+    private string searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        patients = await PatientService.GetPatientsAsync();
+        loading = false;
+    }
+
+    private bool FilterPatients(PatientModel patient)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        return patient.FirstName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || patient.LastName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || patient.MedicalRecordNumber.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || patient.PhoneNumber.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || patient.Email.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+}

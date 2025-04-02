@@ -1,0 +1,236 @@
+@page "/labs"
+@using AmazingCharts.Models
+@using AmazingCharts.Services
+@inject LabService LabService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.h4">Lab Results</MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">Order New Lab</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-4 mb-4">
+                <MudNavMenu>
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Views</MudText>
+                    <MudNavLink Href="labs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Inbox">
+                        Pending Review
+                        @if (pendingCount > 0)
+                        {
+                            <MudBadge Color="Color.Error" Content="@pendingCount" Overlap="true" Class="ml-2" />
+                        }
+                    </MudNavLink>
+                    <MudNavLink Href="labs?view=all" Icon="@Icons.Material.Filled.List">All Results</MudNavLink>
+                    <MudNavLink Href="labs?view=abnormal" Icon="@Icons.Material.Filled.Warning">Abnormal Results</MudNavLink>
+                    <MudNavLink Href="labs?view=orders" Icon="@Icons.Material.Filled.Assignment">Pending Orders</MudNavLink>
+                    
+                    <MudDivider Class="my-4" />
+                    
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Lab Categories</MudText>
+                    <MudNavLink Href="labs?category=blood" Icon="@Icons.Material.Filled.Opacity">Blood Tests</MudNavLink>
+                    <MudNavLink Href="labs?category=imaging" Icon="@Icons.Material.Filled.Image">Imaging</MudNavLink>
+                    <MudNavLink Href="labs?category=pathology" Icon="@Icons.Material.Filled.Biotech">Pathology</MudNavLink>
+                    <MudNavLink Href="labs?category=other" Icon="@Icons.Material.Filled.MoreHoriz">Other Tests</MudNavLink>
+                </MudNavMenu>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="9">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudTextField @bind-Value="searchText" Label="Search Lab Results" Variant="Variant.Outlined" 
+                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" Margin="Margin.Dense" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="Sort By" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4">
+                            <MudSelectItem Value="@("date_desc")">Date (Newest First)</MudSelectItem>
+                            <MudSelectItem Value="@("date_asc")">Date (Oldest First)</MudSelectItem>
+                            <MudSelectItem Value="@("patient")">Patient Name</MudSelectItem>
+                            <MudSelectItem Value="@("test")">Test Name</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                @if (labResults == null)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+                }
+                else if (!labResults.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Class="my-4">No lab results found.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@labResults" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" 
+                             LoadingProgressColor="Color.Info" Filter="new Func<LabResultModel, bool>(FilterLabResults)"
+                             @bind-SelectedItem="selectedLabResult">
+                        <HeaderContent>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Patient</MudTh>
+                            <MudTh>Test</MudTh>
+                            <MudTh>Result Date</MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Color="@GetStatusColor(context)" Size="Size.Small">
+                                    @(context.IsReviewed ? "Reviewed" : "Pending")
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Patient">@context.PatientName</MudTd>
+                            <MudTd DataLabel="Test">
+                                <div class="d-flex align-center">
+                                    @if (context.IsUrgent)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.PriorityHigh" Color="Color.Error" Size="Size.Small" Class="mr-2" />
+                                    }
+                                    @context.TestName
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Result Date">@context.ResultDate?.ToString("MM/dd/yyyy")</MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" OnClick="@(() => ViewLabResult(context))" />
+                                @if (!context.IsReviewed)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Check" Size="Size.Small" OnClick="@(() => MarkAsReviewed(context))" />
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+
+                @if (selectedLabResult != null)
+                {
+                    <MudDivider Class="my-4" />
+                    <MudPaper Class="pa-4 mt-4" Elevation="0">
+                        <MudGrid>
+                            <MudItem xs="12" Class="d-flex justify-space-between align-center">
+                                <MudText Typo="Typo.h5">@selectedLabResult.TestName</MudText>
+                                <div>
+                                    @if (!selectedLabResult.IsReviewed)
+                                    {
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => MarkAsReviewed(selectedLabResult))">
+                                            Mark as Reviewed
+                                        </MudButton>
+                                    }
+                                    <MudIconButton Icon="@Icons.Material.Filled.Print" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Share" />
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.subtitle1">
+                                    Patient: @selectedLabResult.PatientName
+                                </MudText>
+                                <MudText Typo="Typo.subtitle2">
+                                    Ordered By: @selectedLabResult.OrderingProvider
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    Order Date: @selectedLabResult.OrderDate.ToString("MM/dd/yyyy")
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    Result Date: @selectedLabResult.ResultDate?.ToString("MM/dd/yyyy")
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6" Class="d-flex justify-end">
+                                <MudChip T="string" Color="@GetStatusColor(selectedLabResult)" Size="Size.Medium">
+                                    @(selectedLabResult.IsReviewed ? "Reviewed" : "Pending Review")
+                                </MudChip>
+                            </MudItem>
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.h6">Results Summary</MudText>
+                                <MudPaper Class="pa-4 mt-2" Elevation="0" Outlined="true">
+                                    <MudText>@selectedLabResult.ResultSummary</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                                <MudTextField T="string" @bind-Value="selectedLabResult.Notes" 
+                                            Label="Add notes about this lab result" Variant="Variant.Outlined" 
+                                            Lines="3" Class="mt-2" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private bool loading = true;
+    private List<LabResultModel>? labResults;
+    private LabResultModel? selectedLabResult;
+    private string searchText = "";
+    private int pendingCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLabResults();
+    }
+
+    private async Task LoadLabResults()
+    {
+        loading = true;
+        
+        labResults = await LabService.GetPendingLabResultsAsync();
+        pendingCount = labResults.Count(l => !l.IsReviewed);
+        
+        loading = false;
+    }
+
+    private bool FilterLabResults(LabResultModel lab)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        return lab.TestName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || lab.PatientName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || lab.ResultSummary.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || lab.OrderingProvider.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private Color GetStatusColor(LabResultModel lab)
+    {
+        if (lab.IsUrgent && !lab.IsReviewed)
+            return Color.Error;
+        
+        if (!lab.IsReviewed)
+            return Color.Warning;
+            
+        return Color.Success;
+    }
+
+    private void ViewLabResult(LabResultModel lab)
+    {
+        selectedLabResult = lab;
+    }
+
+    private async Task MarkAsReviewed(LabResultModel lab)
+    {
+        if (lab == null) return;
+        
+        var success = await LabService.MarkLabResultAsReviewedAsync(lab.Id);
+        
+        if (success)
+        {
+            lab.IsReviewed = true;
+            pendingCount = labResults?.Count(l => !l.IsReviewed) ?? 0;
+            StateHasChanged();
+        }
+    }
+}
