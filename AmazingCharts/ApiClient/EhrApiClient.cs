@@ -182,6 +182,31 @@ namespace AmazingCharts.ApiClient
                 throw;
             }
         }
+        
+        // Patient endpoints
+        public async Task<List<PatientModel>> GetAllPatientsAsync()
+        {
+            try
+            {
+                // Since there's no direct endpoint for retrieving all patients in the swagger.json,
+                // we'll need to implement a custom solution or use a workaround
+                
+                // Option 1: If the API eventually provides an endpoint for all patients
+                var response = await _httpClient.GetAsync(BuildProxyUrl("api/Patient"));
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadFromJsonAsync<List<PatientModel>>();
+                
+                // Option 2 (alternative): If we need to use a search or filter endpoint
+                // var response = await _httpClient.GetAsync(BuildProxyUrl("api/Patient/search?criteria=all"));
+                // response.EnsureSuccessStatusCode();
+                // return await response.Content.ReadFromJsonAsync<List<PatientModel>>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting all patients: {ex.Message}");
+                throw;
+            }
+        }
 
         // Lab endpoints
         public async Task<LabResultModel> GetLabResultAsync(int id)

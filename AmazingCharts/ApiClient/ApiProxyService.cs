@@ -286,6 +286,20 @@ namespace AmazingCharts.ApiClient
                 throw;
             }
         }
+        
+        // Patient endpoints
+        public async Task<List<PatientModel>> GetAllPatientsAsync()
+        {
+            try
+            {
+                return await _apiClient.GetAllPatientsAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all patients");
+                throw;
+            }
+        }
 
         // Lab endpoints
         public async Task<LabResultModel> GetLabResultAsync(int id)
