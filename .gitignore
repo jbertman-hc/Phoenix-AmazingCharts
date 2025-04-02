@@ -13,3 +13,24 @@ ApiTestConsole/
 .vs/
 .vscode/
 *.user
+
+# Logs
+*.log
+**/logs/
+**/log/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
