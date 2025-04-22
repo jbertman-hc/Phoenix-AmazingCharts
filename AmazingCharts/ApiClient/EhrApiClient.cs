@@ -27,6 +27,20 @@ namespace AmazingCharts.ApiClient
             // No need to add proxy base URL since it's now in the appsettings.json
             return endpoint.TrimStart('/');
         }
+        
+        // Helper method to handle unimplemented methods
+        private Task<T> NotImplementedAsync<T>(string methodName)
+        {
+            Console.WriteLine($"Method not implemented: {methodName}");
+            throw new NotImplementedException($"The API endpoint for {methodName} has not been implemented on the server yet.");
+        }
+        
+        // Helper method for boolean returns from unimplemented methods
+        private Task<bool> NotImplementedBoolAsync(string methodName)
+        {
+            Console.WriteLine($"Method not implemented: {methodName}");
+            throw new NotImplementedException($"The API endpoint for {methodName} has not been implemented on the server yet.");
+        }
 
         // Addendum endpoints
         public async Task<AddendumModel> GetAddendumAsync(int id)
@@ -315,6 +329,253 @@ namespace AmazingCharts.ApiClient
                 Console.WriteLine($"Health check failed: {ex.Message}");
                 throw;
             }
+        }
+        
+        // Unimplemented Patient endpoints
+        public Task<List<PatientModel>> SearchPatientsAsync(string searchCriteria)
+        {
+            return NotImplementedAsync<List<PatientModel>>("SearchPatientsAsync");
+        }
+        
+        // Unimplemented User endpoints
+        public Task<UserModel> GetUserAsync(int id)
+        {
+            return NotImplementedAsync<UserModel>("GetUserAsync");
+        }
+        
+        public Task<List<UserModel>> GetAllUsersAsync()
+        {
+            return NotImplementedAsync<List<UserModel>>("GetAllUsersAsync");
+        }
+        
+        public Task<UserModel> GetUserByUsernameAsync(string username)
+        {
+            return NotImplementedAsync<UserModel>("GetUserByUsernameAsync");
+        }
+        
+        public Task<bool> AuthenticateUserAsync(string username, string password)
+        {
+            return NotImplementedBoolAsync("AuthenticateUserAsync");
+        }
+        
+        // Unimplemented Provider endpoints
+        public Task<ProviderModel> GetProviderAsync(int id)
+        {
+            return NotImplementedAsync<ProviderModel>("GetProviderAsync");
+        }
+        
+        public Task<List<ProviderModel>> GetAllProvidersAsync()
+        {
+            return NotImplementedAsync<List<ProviderModel>>("GetAllProvidersAsync");
+        }
+        
+        public Task<List<ProviderModel>> GetProvidersBySpecialtyAsync(string specialty)
+        {
+            return NotImplementedAsync<List<ProviderModel>>("GetProvidersBySpecialtyAsync");
+        }
+        
+        // Unimplemented Prescription endpoints
+        public Task<PrescriptionModel> GetPrescriptionAsync(int id)
+        {
+            return NotImplementedAsync<PrescriptionModel>("GetPrescriptionAsync");
+        }
+        
+        public Task<List<PrescriptionModel>> GetPrescriptionsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<PrescriptionModel>>("GetPrescriptionsByPatientIdAsync");
+        }
+        
+        public Task<List<PrescriptionModel>> GetActivePrescriptionsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<PrescriptionModel>>("GetActivePrescriptionsByPatientIdAsync");
+        }
+        
+        public Task<bool> CreatePrescriptionAsync(PrescriptionModel prescription)
+        {
+            return NotImplementedBoolAsync("CreatePrescriptionAsync");
+        }
+        
+        public Task<bool> RefillPrescriptionAsync(int prescriptionId, int refillCount)
+        {
+            return NotImplementedBoolAsync("RefillPrescriptionAsync");
+        }
+        
+        // Unimplemented Order endpoints
+        public Task<OrderModel> GetOrderAsync(int id)
+        {
+            return NotImplementedAsync<OrderModel>("GetOrderAsync");
+        }
+        
+        public Task<List<OrderModel>> GetOrdersByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<OrderModel>>("GetOrdersByPatientIdAsync");
+        }
+        
+        public Task<List<OrderModel>> GetPendingOrdersAsync()
+        {
+            return NotImplementedAsync<List<OrderModel>>("GetPendingOrdersAsync");
+        }
+        
+        public Task<bool> CreateOrderAsync(OrderModel order)
+        {
+            return NotImplementedBoolAsync("CreateOrderAsync");
+        }
+        
+        public Task<bool> UpdateOrderStatusAsync(int orderId, string status)
+        {
+            return NotImplementedBoolAsync("UpdateOrderStatusAsync");
+        }
+        
+        // Unimplemented Clinical Note endpoints
+        public Task<ClinicalNoteModel> GetClinicalNoteAsync(int id)
+        {
+            return NotImplementedAsync<ClinicalNoteModel>("GetClinicalNoteAsync");
+        }
+        
+        public Task<List<ClinicalNoteModel>> GetClinicalNotesByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<ClinicalNoteModel>>("GetClinicalNotesByPatientIdAsync");
+        }
+        
+        public Task<List<ClinicalNoteModel>> GetClinicalNotesByEncounterIdAsync(int encounterId)
+        {
+            return NotImplementedAsync<List<ClinicalNoteModel>>("GetClinicalNotesByEncounterIdAsync");
+        }
+        
+        public Task<bool> CreateClinicalNoteAsync(ClinicalNoteModel note)
+        {
+            return NotImplementedBoolAsync("CreateClinicalNoteAsync");
+        }
+        
+        // Unimplemented Immunization endpoints
+        public Task<ImmunizationModel> GetImmunizationAsync(int id)
+        {
+            return NotImplementedAsync<ImmunizationModel>("GetImmunizationAsync");
+        }
+        
+        public Task<List<ImmunizationModel>> GetImmunizationsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<ImmunizationModel>>("GetImmunizationsByPatientIdAsync");
+        }
+        
+        public Task<bool> CreateImmunizationAsync(ImmunizationModel immunization)
+        {
+            return NotImplementedBoolAsync("CreateImmunizationAsync");
+        }
+        
+        // Unimplemented Encounter endpoints
+        public Task<EncounterModel> GetEncounterAsync(int id)
+        {
+            return NotImplementedAsync<EncounterModel>("GetEncounterAsync");
+        }
+        
+        public Task<List<EncounterModel>> GetEncountersByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<EncounterModel>>("GetEncountersByPatientIdAsync");
+        }
+        
+        public Task<EncounterModel> GetCurrentEncounterAsync(int patientId)
+        {
+            return NotImplementedAsync<EncounterModel>("GetCurrentEncounterAsync");
+        }
+        
+        public Task<bool> CreateEncounterAsync(EncounterModel encounter)
+        {
+            return NotImplementedBoolAsync("CreateEncounterAsync");
+        }
+        
+        public Task<bool> CloseEncounterAsync(int encounterId)
+        {
+            return NotImplementedBoolAsync("CloseEncounterAsync");
+        }
+        
+        // Unimplemented Problem list endpoints
+        public Task<ProblemModel> GetProblemAsync(int id)
+        {
+            return NotImplementedAsync<ProblemModel>("GetProblemAsync");
+        }
+        
+        public Task<List<ProblemModel>> GetProblemsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<ProblemModel>>("GetProblemsByPatientIdAsync");
+        }
+        
+        public Task<List<ProblemModel>> GetActiveProblemsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<ProblemModel>>("GetActiveProblemsByPatientIdAsync");
+        }
+        
+        public Task<bool> CreateProblemAsync(ProblemModel problem)
+        {
+            return NotImplementedBoolAsync("CreateProblemAsync");
+        }
+        
+        public Task<bool> ResolveProblemAsync(int problemId)
+        {
+            return NotImplementedBoolAsync("ResolveProblemAsync");
+        }
+        
+        // Unimplemented Referral endpoints
+        public Task<ReferralModel> GetReferralAsync(int id)
+        {
+            return NotImplementedAsync<ReferralModel>("GetReferralAsync");
+        }
+        
+        public Task<List<ReferralModel>> GetReferralsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<ReferralModel>>("GetReferralsByPatientIdAsync");
+        }
+        
+        public Task<List<ReferralModel>> GetPendingReferralsAsync()
+        {
+            return NotImplementedAsync<List<ReferralModel>>("GetPendingReferralsAsync");
+        }
+        
+        public Task<bool> CreateReferralAsync(ReferralModel referral)
+        {
+            return NotImplementedBoolAsync("CreateReferralAsync");
+        }
+        
+        public Task<bool> UpdateReferralStatusAsync(int referralId, string status)
+        {
+            return NotImplementedBoolAsync("UpdateReferralStatusAsync");
+        }
+        
+        // Unimplemented Insurance endpoints
+        public Task<InsuranceModel> GetInsuranceAsync(int id)
+        {
+            return NotImplementedAsync<InsuranceModel>("GetInsuranceAsync");
+        }
+        
+        public Task<List<InsuranceModel>> GetInsurancesByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<InsuranceModel>>("GetInsurancesByPatientIdAsync");
+        }
+        
+        public Task<List<InsuranceModel>> GetAllInsuranceProvidersAsync()
+        {
+            return NotImplementedAsync<List<InsuranceModel>>("GetAllInsuranceProvidersAsync");
+        }
+        
+        public Task<bool> VerifyInsuranceEligibilityAsync(int patientId, int insuranceId)
+        {
+            return NotImplementedBoolAsync("VerifyInsuranceEligibilityAsync");
+        }
+        
+        // Unimplemented Document endpoints
+        public Task<DocumentModel> GetDocumentAsync(int id)
+        {
+            return NotImplementedAsync<DocumentModel>("GetDocumentAsync");
+        }
+        
+        public Task<List<DocumentModel>> GetDocumentsByPatientIdAsync(int patientId)
+        {
+            return NotImplementedAsync<List<DocumentModel>>("GetDocumentsByPatientIdAsync");
+        }
+        
+        public Task<bool> UploadDocumentAsync(DocumentModel document)
+        {
+            return NotImplementedBoolAsync("UploadDocumentAsync");
         }
     }
 }
